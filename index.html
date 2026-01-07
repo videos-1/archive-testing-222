@@ -142,38 +142,31 @@
 
     .fullscreen-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
       background: #000;
-      z-index: 1000;
+      z-index: 999999;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
     }
 
     .close-btn {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 1000000;
       background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
-      z-index: 1001;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    .close-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      border: none;
+      color: white;
     }
 
     .fullscreen-avatar {
@@ -183,17 +176,10 @@
       object-fit: contain;
     }
 
-    .embed-container {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .embed-container iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
+    .fullscreen-overlay iframe {
+      width: 100vw;
+      height: 100vh;
+      border: 0;
     }
     
     .share-btn {
@@ -409,11 +395,15 @@
         `&fl[]=identifier` +
         `&fl[]=title` +
         `&fl[]=creator` +
-        `&fl[]=uploader` +
         `&fl[]=publicdate` +
         `&fl[]=mediatype` +
         `&fl[]=description` +
         `&fl[]=subject` +
+        `&fl[]=gmail` +
+        `&fl[]=link1` +
+        `&fl[]=link2` +
+        `&fl[]=link3` +
+        `&fl[]=phone_number` +
         `&sort[]=publicdate desc` +
         `&rows=9` +
         `&page=${page}` +
@@ -441,7 +431,6 @@
       const identifier = metadata.metadata.identifier;
       const title = metadata.metadata.title || identifier;
       const creator = metadata.metadata.creator || "Unknown";
-      const uploader = metadata.metadata.uploader || "Unknown";
       const date = metadata.metadata.publicdate || "N/A";
       const mediatype = metadata.metadata.mediatype || "unknown";
       const description = metadata.metadata.description ? metadata.metadata.description.toString().slice(0, 150) : "No description";
@@ -464,17 +453,26 @@
       card.className = "card";
       card.dataset.mediatype = mediatype;
 
-      card.innerHTML = `
+      let metaHtml = `
         <div class="title">${title}</div>
         <div class="preview-container" data-embed="${embedUrl}">
           <div class="preview-placeholder">Preview</div>
         </div>
         <div class="meta"><b>Creator:</b> ${creator}</div>
-        <div class="meta"><b>Uploader:</b> ${uploader}</div>
         <div class="meta"><b>Date:</b> ${date}</div>
         <div class="meta"><b>Tags:</b> ${tags}</div>
         <div class="meta"><b>Media:</b> ${mediatype}</div>
         <div class="meta"><b>Description:</b> ${description}</div>
+      `;
+
+      // Add optional fields only if they exist
+      if (metadata.metadata.gmail) metaHtml += `<div class="meta"><b>Gmail:</b> ${metadata.metadata.gmail}</div>`;
+      if (metadata.metadata.link1) metaHtml += `<div class="meta"><b>Link 1:</b> <a href="${metadata.metadata.link1}" target="_blank" style="color:#60a5fa;">${metadata.metadata.link1}</a></div>`;
+      if (metadata.metadata.link2) metaHtml += `<div class="meta"><b>Link 2:</b> <a href="${metadata.metadata.link2}" target="_blank" style="color:#60a5fa;">${metadata.metadata.link2}</a></div>`;
+      if (metadata.metadata.link3) metaHtml += `<div class="meta"><b>Link 3:</b> <a href="${metadata.metadata.link3}" target="_blank" style="color:#60a5fa;">${metadata.metadata.link3}</a></div>`;
+      if (metadata.metadata.phone_number) metaHtml += `<div class="meta"><b>Phone:</b> ${metadata.metadata.phone_number}</div>`;
+
+      metaHtml += `
         <div class="meta">
           <a href="${reviewUrl}" target="_blank" class="reviews-link">Reviews</a>
         </div>
@@ -483,6 +481,8 @@
           <button class="share-btn" data-share-url="${shareUrl}" data-title="${title}" data-creator="${creator}" data-description="${description}">ᯓ➤</button>
         </div>
       `;
+
+      card.innerHTML = metaHtml;
 
       card.querySelector(".open-btn").onclick = (e) => {
         const embedUrl = e.target.dataset.embed;
@@ -523,7 +523,6 @@
     function createCard(identifier, metadata) {
       const title = metadata.title || identifier;
       const creator = metadata.creator || "Unknown";
-      const uploader = metadata.uploader || "Unknown";
       const date = metadata.publicdate || "N/A";
       const tags = metadata.subject ? metadata.subject.toString().slice(0, 100) : "None";
       const mediaType = metadata.mediatype || "unknown";
@@ -536,17 +535,26 @@
       card.className = "card";
       card.dataset.mediatype = mediaType;
 
-      card.innerHTML = `
+      let metaHtml = `
         <div class="title">${title}</div>
         <div class="preview-container" data-embed="${embedUrl}">
           <div class="preview-placeholder">Preview</div>
         </div>
         <div class="meta"><b>Creator:</b> ${creator}</div>
-        <div class="meta"><b>Uploader:</b> ${uploader}</div>
         <div class="meta"><b>Date:</b> ${date}</div>
         <div class="meta"><b>Tags:</b> ${tags}</div>
         <div class="meta"><b>Media:</b> ${mediaType}</div>
         <div class="meta"><b>Description:</b> ${description}</div>
+      `;
+
+      // Add optional fields only if they exist
+      if (metadata.gmail) metaHtml += `<div class="meta"><b>Gmail:</b> ${metadata.gmail}</div>`;
+      if (metadata.link1) metaHtml += `<div class="meta"><b>Link 1:</b> <a href="${metadata.link1}" target="_blank" style="color:#60a5fa;">${metadata.link1}</a></div>`;
+      if (metadata.link2) metaHtml += `<div class="meta"><b>Link 2:</b> <a href="${metadata.link2}" target="_blank" style="color:#60a5fa;">${metadata.link2}</a></div>`;
+      if (metadata.link3) metaHtml += `<div class="meta"><b>Link 3:</b> <a href="${metadata.link3}" target="_blank" style="color:#60a5fa;">${metadata.link3}</a></div>`;
+      if (metadata.phone_number) metaHtml += `<div class="meta"><b>Phone:</b> ${metadata.phone_number}</div>`;
+
+      metaHtml += `
         <div class="meta">
           <a href="${reviewUrl}" target="_blank" class="reviews-link">Reviews</a>
         </div>
@@ -555,6 +563,8 @@
           <button class="share-btn" data-share-url="${shareUrl}" data-title="${title}" data-creator="${creator}" data-description="${description}">ᯓ➤</button>
         </div>
       `;
+
+      card.innerHTML = metaHtml;
 
       card.querySelector(".open-btn").onclick = (e) => {
         const embedUrl = e.target.dataset.embed;
@@ -645,24 +655,29 @@
 
     // Fullscreen item functionality
     function openFullscreen(embedUrl) {
-      // Create overlay
+      document.body.style.overflow = "hidden";
+
       const overlay = document.createElement("div");
       overlay.className = "fullscreen-overlay";
-      
-      // Create close button
+
       const closeBtn = document.createElement("button");
       closeBtn.className = "close-btn";
       closeBtn.innerHTML = "✕";
       closeBtn.onclick = () => {
+        document.body.style.overflow = "";
         document.body.removeChild(overlay);
       };
-      
-      // Create embed container
+
       const embedContainer = document.createElement("div");
       embedContainer.className = "embed-container";
-      embedContainer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
-      
-      // Assemble and add to body
+      embedContainer.innerHTML = `
+        <iframe
+          src="${embedUrl}"
+          allowfullscreen
+          style="width:100vw;height:100vh;border:0"
+        ></iframe>
+      `;
+
       overlay.appendChild(closeBtn);
       overlay.appendChild(embedContainer);
       document.body.appendChild(overlay);
