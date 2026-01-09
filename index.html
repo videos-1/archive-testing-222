@@ -245,6 +245,21 @@
     .load-more-btn:hover {
       background: #334155;
     }
+    
+    .original-files-btn {
+      background: none;
+      border: none;
+      color: #10b981;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 0;
+      margin-left: 0.5rem;
+      display: none; /* Hidden by default */
+    }
+    
+    .original-files-btn:hover {
+      color: #6ee7b7;
+    }
   </style>
 </head>
 <body>
@@ -381,6 +396,45 @@
       const res = await fetch(api);
       const data = await res.json();
       return data;
+    }
+
+    // Function to get original files count
+    async function getOriginalFilesCount(identifier) {
+      try {
+        const res = await fetch(`https://archive.org/metadata/${identifier}`);
+        const data = await res.json();
+
+        if (!Array.isArray(data.files)) return 0;
+
+        const realFiles = data.files.filter(file => {
+          if (file.source !== "original") return false;
+
+          const name = (file.name || "").toLowerCase();
+
+          // exclude junk
+          if (
+            name.includes("thumb") ||
+            name.includes("cover") ||
+            name.endsWith(".jpg") ||
+            name.endsWith(".png") ||
+            name.endsWith(".gif") ||
+            name.endsWith(".txt") ||
+            name.endsWith(".json") ||
+            name.endsWith(".xml") ||
+            name.endsWith(".srt") ||
+            name.endsWith(".vtt")
+          ) {
+            return false;
+          }
+
+          return true;
+        });
+
+        return realFiles.length;
+      } catch (err) {
+        console.error("Metadata error:", err);
+        return 0;
+      }
     }
 
     // Fetch items for a user
@@ -561,6 +615,7 @@
         <div class="card-actions">
           <button class="open-btn" data-embed="${embedUrl}">Open Item</button>
           <button class="share-btn" data-share-url="${shareUrl}" data-title="${title}" data-creator="${creator}" data-description="${description}">ᯓ➤</button>
+          <button class="original-files-btn" data-identifier="${identifier}" data-username="${username}">ᯤ</button>
         </div>
       `;
 
@@ -595,6 +650,13 @@
         }
       };
 
+      // Handle original files button click
+      card.querySelector(".original-files-btn").onclick = (e) => {
+        const identifier = e.target.dataset.identifier;
+        const username = e.target.dataset.username;
+        window.location.href = `items_playlist.html?username=${username}&identifier=${identifier}`;
+      };
+
       // Store item for filtering
       allItems.push({
         element: card,
@@ -608,7 +670,7 @@
       return card;
     }
 
-    function renderItems(username, items) {
+    async function renderItems(username, items) {
       if (!accountState[username]) return;
       
       const state = accountState[username];
@@ -616,10 +678,25 @@
       // Create document fragment for batch insert
       const fragment = document.createDocumentFragment();
 
+      // Process items to get original files count
+      const itemsWithCounts = await Promise.all(items.map(async (meta) => {
+        const identifier = meta.identifier;
+        const originalFilesCount = await getOriginalFilesCount(identifier);
+        return { ...meta, originalFilesCount };
+      }));
+
       // Create cards for all items
-      items.forEach((meta) => {
+      itemsWithCounts.forEach((meta) => {
         const identifier = meta.identifier;
         const card = createCard(identifier, meta);
+        
+        // Show original files button if there are original files
+        if (meta.originalFilesCount > 1) {
+          const originalFilesBtn = card.querySelector(".original-files-btn");
+          originalFilesBtn.style.display = "inline-block";
+          originalFilesBtn.textContent = `ᯤ ${meta.originalFilesCount}`;
+        }
+        
         fragment.appendChild(card);
       });
 
@@ -644,7 +721,7 @@
       
       const items = await fetchItems(username, accountState[username].page);
       if (items) {
-        renderItems(username, items);
+        await renderItems(username, items);
       } else if (accountState[username].exhausted) {
         status.textContent = "No more items to load";
       }
@@ -721,7 +798,7 @@
         if (username) {
           const items = await fetchItems(username, 1);
           if (items) {
-            renderItems(username, items);
+            await renderItems(username, items);
           } else {
             status.textContent = "No items found for this profile";
           }
