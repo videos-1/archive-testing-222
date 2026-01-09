@@ -343,26 +343,6 @@
       max-height: 200px;
       overflow-y: auto;
     }
-    
-    .zoom-controls {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 1000001;
-      display: flex;
-      gap: 5px;
-    }
-    
-    .zoom-btn {
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      border: none;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      font-size: 16px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -927,7 +907,7 @@
       loadMoreBtn.textContent = "Load More";
     }
 
-    // Fullscreen item functionality with zoom controls
+    // Fullscreen item functionality
     function openFullscreen(embedUrl) {
       document.body.style.overflow = "hidden";
 
@@ -941,48 +921,6 @@
         document.body.style.overflow = "";
         document.body.removeChild(overlay);
       };
-
-      // Create zoom controls
-      const zoomControls = document.createElement("div");
-      zoomControls.className = "zoom-controls";
-      
-      const zoomInBtn = document.createElement("button");
-      zoomInBtn.className = "zoom-btn";
-      zoomInBtn.innerHTML = "+";
-      zoomInBtn.onclick = () => {
-        const iframe = embedContainer.querySelector('iframe');
-        if (iframe) {
-          iframe.style.transform = iframe.style.transform 
-            ? `scale(${parseFloat(iframe.style.transform.replace('scale(', '').replace(')', '')) + 0.1})`
-            : 'scale(1.1)';
-        }
-      };
-      
-      const zoomOutBtn = document.createElement("button");
-      zoomOutBtn.className = "zoom-btn";
-      zoomOutBtn.innerHTML = "-";
-      zoomOutBtn.onclick = () => {
-        const iframe = embedContainer.querySelector('iframe');
-        if (iframe) {
-          iframe.style.transform = iframe.style.transform 
-            ? `scale(${parseFloat(iframe.style.transform.replace('scale(', '').replace(')', '')) - 0.1})`
-            : 'scale(0.9)';
-        }
-      };
-      
-      const resetZoomBtn = document.createElement("button");
-      resetZoomBtn.className = "zoom-btn";
-      resetZoomBtn.innerHTML = "↺";
-      resetZoomBtn.onclick = () => {
-        const iframe = embedContainer.querySelector('iframe');
-        if (iframe) {
-          iframe.style.transform = 'scale(1)';
-        }
-      };
-      
-      zoomControls.appendChild(zoomInBtn);
-      zoomControls.appendChild(zoomOutBtn);
-      zoomControls.appendChild(resetZoomBtn);
 
       const embedContainer = document.createElement("div");
       embedContainer.className = "embed-container";
@@ -999,7 +937,6 @@
       `;
 
       overlay.appendChild(closeBtn);
-      overlay.appendChild(zoomControls);
       overlay.appendChild(embedContainer);
       document.body.appendChild(overlay);
     }
