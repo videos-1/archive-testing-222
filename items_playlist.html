@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,6 +44,35 @@ button{
   left:1rem;
   top:50%;
   transform:translateY(-50%);
+}
+
+.search-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.search-container input {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  width: 100%;
+  max-width: 400px;
+}
+
+.refresh-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.refresh-link:hover {
+  text-decoration: underline;
 }
 
 .viewer{
@@ -179,6 +209,12 @@ button{
   <button id="backBtn" onclick="goBack()">← Back</button>
   <h2 id="pageTitle">Item Viewer</h2>
   <div class="meta" id="creatorLine"></div>
+  
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search files by name...">
+    <button id="searchBtn">Search</button>
+  </div>
+  <div class="refresh-link" onclick="refreshDisplay()">Refresh</div>
 </header>
 
 <div class="viewer">
@@ -205,6 +241,10 @@ const itemMeta = document.getElementById("itemMeta");
 const pageTitle = document.getElementById("pageTitle");
 const creatorLine = document.getElementById("creatorLine");
 const filesGrid = document.getElementById("filesGrid");
+const searchInput = document.getElementById("searchInput");
+const searchBtn = document.getElementById("searchBtn");
+
+let allFiles = []; // Store all files for search/refresh
 
 function goBack(){
   window.history.back();
@@ -358,6 +398,74 @@ function parseDate(dateStr) {
   return isNaN(parsed.getTime()) ? new Date(0) : parsed;
 }
 
+// Display files (with optional filter)
+function displayFiles(filesToShow) {
+  // Clear previous grid content
+  filesGrid.innerHTML = '';
+
+  if(filesToShow.length === 0) {
+    filesGrid.innerHTML = '<p>No files found</p>';
+    return;
+  }
+
+  // Create grid items
+  filesToShow.forEach(file => {
+    const gridItem = document.createElement('div');
+    gridItem.className = 'grid-item';
+    
+    const fileSize = formatFileSize(file.size);
+    const fileDate = file.dateObj.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    
+    gridItem.innerHTML = `
+      <button class="fullscreen-btn" title="View Fullscreen">⛶</button>
+      <div class="media">
+        ${createFileElement(file)}
+      </div>
+      <div class="file-info">
+        <div class="file-name">${file.name}</div>
+        <div class="file-meta">${file.format} • ${fileSize} • ${fileDate} <span class="share-symbol" title="Share">ᯓ➤</span></div>
+      </div>
+    `;
+    
+    filesGrid.appendChild(gridItem);
+    
+    // Add event listener to fullscreen button
+    gridItem.querySelector('.fullscreen-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      openFullscreen(file);
+    });
+    
+    // Add event listener to share symbol
+    gridItem.querySelector('.share-symbol').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const title = document.getElementById("itemTitle").textContent;
+      const user = username || "Unknown";
+      shareItem(title, user, identifier, file.name);
+    });
+  });
+}
+
+// Search files by name
+function searchFiles() {
+  const searchTerm = searchInput.value.toLowerCase();
+  if (!searchTerm) {
+    displayFiles(allFiles); // Show all if search is empty
+    return;
+  }
+  
+  const filteredFiles = allFiles.filter(file => 
+    file.name.toLowerCase().includes(searchTerm)
+  );
+  
+  displayFiles(filteredFiles);
+}
+
+// Refresh display (show all files)
+function refreshDisplay() {
+  searchInput.value = '';
+  displayFiles(allFiles);
+}
+
 async function loadItem(){
   if(!identifier){
     itemTitle.textContent = "No item selected";
@@ -395,7 +503,7 @@ async function loadItem(){
     );
 
     // Extract dates for files and sort by newest first
-    const filesWithDates = originalFiles.map(file => {
+    allFiles = originalFiles.map(file => {
       // Try to get date from file metadata
       const fileDate = file.mtime ? new Date(file.mtime * 1000) : 
                       file.date ? parseDate(file.date) : new Date(0);
@@ -406,51 +514,17 @@ async function loadItem(){
     });
 
     // Sort by date (newest first)
-    filesWithDates.sort((a, b) => b.dateObj - a.dateObj);
+    allFiles.sort((a, b) => b.dateObj - a.dateObj);
 
-    // Clear previous grid content
-    filesGrid.innerHTML = '';
-
-    if(filesWithDates.length === 0) {
-      filesGrid.innerHTML = '<p>No original files found</p>';
-      return;
-    }
-
-    // Create grid items
-    filesWithDates.forEach(file => {
-      const gridItem = document.createElement('div');
-      gridItem.className = 'grid-item';
-      
-      const fileSize = formatFileSize(file.size);
-      const fileDate = file.dateObj.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-      
-      gridItem.innerHTML = `
-        <button class="fullscreen-btn" title="View Fullscreen">⛶</button>
-        <div class="media">
-          ${createFileElement(file)}
-        </div>
-        <div class="file-info">
-          <div class="file-name">${file.name}</div>
-          <div class="file-meta">${file.format} • ${fileSize} • ${fileDate} <span class="share-symbol" title="Share">ᯓ➤</span></div>
-        </div>
-      `;
-      
-      filesGrid.appendChild(gridItem);
-      
-      // Add event listener to fullscreen button
-      gridItem.querySelector('.fullscreen-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        openFullscreen(file);
-      });
-      
-      // Add event listener to share symbol
-      gridItem.querySelector('.share-symbol').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const title = meta.title || identifier;
-        const user = username || "Unknown";
-        shareItem(title, user, identifier, file.name);
-      });
+    // Initial display
+    displayFiles(allFiles);
+    
+    // Setup search event listeners
+    searchBtn.addEventListener('click', searchFiles);
+    searchInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') searchFiles();
     });
+    
   }catch(err){
     console.error(err);
     itemTitle.textContent = identifier;
