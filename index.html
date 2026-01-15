@@ -72,6 +72,41 @@
       color: #93c5fd;
     }
 
+    .controls {
+      max-width: 1200px;
+      margin: 1rem auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .filter-container, .search-container {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .filter-container select, .search-container input, .search-container button {
+      padding: 0.5rem;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+
+    .filter-container button, .search-container button {
+      background: #1e293b;
+      color: #e5e7eb;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .filter-container button:hover, .search-container button:hover {
+      background: #334155;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -244,6 +279,10 @@
       max-height: 200px;
       overflow-y: auto;
     }
+    
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
@@ -262,6 +301,35 @@
 
   <div class="subtitle" id="subtitle">Loading profile content…</div>
   
+  <!-- Controls Section -->
+  <div class="controls">
+    <div class="filter-container">
+      <select id="mediatype-filter">
+        <option value="all">All Media Types</option>
+        <option value="texts">Texts</option>
+        <option value="audio">Audio</option>
+        <option value="movies">Movies</option>
+        <option value="software">Software</option>
+        <option value="image">Image</option>
+        <option value="data">Data</option>
+        <option value="web">Web</option>
+        <option value="etree">ETree</option>
+        <option value="collection">Collection</option>
+        <option value="account">Account</option>
+      </select>
+      <button id="apply-filter">Apply Filter</button>
+    </div>
+    
+    <div class="search-container">
+      <input type="text" id="search-input" placeholder="Search by title...">
+      <select id="search-type">
+        <option value="title">Title</option>
+        <option value="tags">Tags</option>
+      </select>
+      <button id="search-btn">Search</button>
+    </div>
+  </div>
+  
   <div class="grid" id="grid"></div>
   <div class="status" id="status">Initializing…</div>
 
@@ -272,6 +340,11 @@
     const avatarImg = document.getElementById("avatar");
     const usernameDisplay = document.getElementById("username-display");
     const shareProfileBtn = document.getElementById("share-profile-btn");
+    const mediatypeFilter = document.getElementById("mediatype-filter");
+    const applyFilterBtn = document.getElementById("apply-filter");
+    const searchInput = document.getElementById("search-input");
+    const searchType = document.getElementById("search-type");
+    const searchBtn = document.getElementById("search-btn");
 
     // Store all items for filtering
     let allItems = [];
@@ -733,6 +806,52 @@
       overlay.appendChild(embedContainer);
       document.body.appendChild(overlay);
     }
+
+    // Apply mediatype filter
+    function applyMediaTypeFilter() {
+      const selectedType = mediatypeFilter.value;
+      
+      allItems.forEach(item => {
+        if (selectedType === "all" || item.mediatype === selectedType) {
+          item.element.classList.remove("hidden");
+        } else {
+          item.element.classList.add("hidden");
+        }
+      });
+    }
+
+    // Perform search
+    function performSearch() {
+      const searchTerm = searchInput.value.toLowerCase();
+      const searchBy = searchType.value;
+      
+      allItems.forEach(item => {
+        let match = false;
+        
+        if (searchBy === "title") {
+          match = item.title.includes(searchTerm);
+        } else if (searchBy === "tags") {
+          match = item.tags.includes(searchTerm);
+        }
+        
+        if (match) {
+          item.element.classList.remove("hidden");
+        } else {
+          item.element.classList.add("hidden");
+        }
+      });
+    }
+
+    // Event listeners for controls
+    applyFilterBtn.addEventListener("click", applyMediaTypeFilter);
+    searchBtn.addEventListener("click", performSearch);
+    
+    // Allow Enter key to trigger search
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        performSearch();
+      }
+    });
 
     // Initialize
     (async function init() {
