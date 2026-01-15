@@ -72,85 +72,6 @@
       color: #93c5fd;
     }
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      margin: 1rem 0;
-      justify-content: center;
-      align-items: end;
-    }
-
-    .search-container {
-      display: flex;
-      gap: 0.5rem;
-      align-items: end;
-    }
-
-    .search-input {
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #1e293b;
-      background: #0f172a;
-      color: #e5e7eb;
-      width: 200px;
-    }
-
-    .search-select {
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #1e293b;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-
-    .search-btn {
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: none;
-      background: #1e293b;
-      color: #e5e7eb;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .search-btn:hover {
-      background: #334155;
-    }
-
-    .filter-container {
-      display: flex;
-      gap: 0.5rem;
-      align-items: center;
-    }
-
-    .filter-label {
-      font-size: 0.9rem;
-    }
-
-    .filter-select {
-      padding: 0.5rem;
-      border-radius: 8px;
-      border: 1px solid #1e293b;
-      background: #0f172a;
-      color: #e5e7eb;
-    }
-
-    .filter-btn {
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      border: none;
-      background: #1e293b;
-      color: #e5e7eb;
-      cursor: pointer;
-      font-weight: 500;
-      height: fit-content;
-    }
-
-    .filter-btn:hover {
-      background: #334155;
-    }
-
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -304,26 +225,6 @@
       align-items: center;
     }
     
-    .load-more-container {
-      text-align: center;
-      margin-top: 2rem;
-    }
-    
-    .load-more-btn {
-      padding: 0.7rem 1.5rem;
-      border-radius: 10px;
-      border: none;
-      background: #1e293b;
-      color: #e5e7eb;
-      font-weight: 500;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    
-    .load-more-btn:hover {
-      background: #334155;
-    }
-    
     .original-files-btn {
       background: none;
       border: none;
@@ -361,57 +262,19 @@
 
   <div class="subtitle" id="subtitle">Loading profile content…</div>
   
-  <div class="controls">
-    <div class="search-container">
-      <input type="text" class="search-input" id="search-input" placeholder="Search items...">
-      <select class="search-select" id="search-type">
-        <option value="title">Title</option>
-        <option value="tag">Tag</option>
-      </select>
-      <button class="search-btn" id="search-btn">Search</button>
-    </div>
-    
-    <div class="filter-container">
-      <span class="filter-label">Media Type:</span>
-      <select class="filter-select" id="media-filter">
-        <option value="all">All Types</option>
-        <option value="movies">Video</option>
-        <option value="audio">Audio</option>
-        <option value="texts">Texts</option>
-        <option value="image">Image</option>
-        <option value="software">Software</option>
-        <option value="data">Data</option>
-      </select>
-      <button class="filter-btn" id="filter-ok-btn">OK</button>
-    </div>
-  </div>
-
   <div class="grid" id="grid"></div>
   <div class="status" id="status">Initializing…</div>
-  
-  <div class="load-more-container">
-    <button class="load-more-btn" id="load-more-btn">Load More</button>
-  </div>
 
   <script>
     const grid = document.getElementById("grid");
     const status = document.getElementById("status");
     const subtitle = document.getElementById("subtitle");
-    const loadMoreBtn = document.getElementById("load-more-btn");
     const avatarImg = document.getElementById("avatar");
     const usernameDisplay = document.getElementById("username-display");
     const shareProfileBtn = document.getElementById("share-profile-btn");
-    const searchInput = document.getElementById("search-input");
-    const searchType = document.getElementById("search-type");
-    const searchBtn = document.getElementById("search-btn");
-    const mediaFilter = document.getElementById("media-filter");
-    const filterOkBtn = document.getElementById("filter-ok-btn");
 
     // Store all items for filtering
     let allItems = [];
-    let currentSearchTerm = "";
-    let currentSearchType = "title";
-    let currentMediaType = "all";
 
     // IntersectionObserver for lazy loading previews
     const previewObserver = new IntersectionObserver(entries => {
@@ -437,6 +300,16 @@
     const urlParams = new URLSearchParams(window.location.search);
     const urlUsername = urlParams.get('username');
     const urlIdentifier = urlParams.get('identifier');
+    let fileParam = null;
+    
+    // Check for file parameter in the URL
+    const fullPath = window.location.href;
+    if (fullPath.includes('&file=')) {
+      const fileMatch = fullPath.match(/&file=(.*)/);
+      if (fileMatch) {
+        fileParam = fileMatch[1];
+      }
+    }
 
     let username = urlUsername;
     let accountState = {};
@@ -506,19 +379,6 @@
       }
     });
 
-    // Search functionality
-    searchBtn.addEventListener('click', () => {
-      currentSearchTerm = searchInput.value.trim();
-      currentSearchType = searchType.value;
-      renderFilteredItems();
-    });
-
-    // Media filter OK button functionality
-    filterOkBtn.addEventListener('click', () => {
-      currentMediaType = mediaFilter.value;
-      renderFilteredItems();
-    });
-
     // Fetch metadata for a specific identifier
     async function fetchItemMetadata(identifier) {
       const api = `https://archive.org/metadata/${identifier}`;
@@ -572,11 +432,6 @@
       
       let api = `https://archive.org/advancedsearch.php?q=creator:@${username}`;
       
-      // Add media type filter if not "all"
-      if (currentMediaType !== "all") {
-        api += `&fl[]=mediatype:"${currentMediaType}"`;
-      }
-      
       api += `&fl[]=identifier` +
         `&fl[]=title` +
         `&fl[]=creator` +
@@ -590,7 +445,7 @@
         `&fl[]=link3` +
         `&fl[]=phone_number` +
         `&sort[]=publicdate desc` +
-        `&rows=9` +
+        `&rows=50` + // Increased rows to load more items at once
         `&page=${page}` +
         `&output=json`;
 
@@ -806,48 +661,6 @@
       return card;
     }
 
-    function renderFilteredItems() {
-      // Clear the grid
-      grid.innerHTML = '';
-      
-      // Filter items based on search term and media type
-      const filteredItems = allItems.filter(item => {
-        // Media type filter
-        if (currentMediaType !== "all" && item.mediatype !== currentMediaType) {
-          return false;
-        }
-        
-        // Search filter
-        if (currentSearchTerm) {
-          if (currentSearchType === "title") {
-            if (!item.title.includes(currentSearchTerm.toLowerCase())) {
-              return false;
-            }
-          } else if (currentSearchType === "tag") {
-            if (!item.tags.includes(currentSearchTerm.toLowerCase())) {
-              return false;
-            }
-          }
-        }
-        
-        return true;
-      });
-      
-      // Render filtered items
-      filteredItems.forEach(itemObj => {
-        const btn = itemObj.element.querySelector(".original-files-btn");
-
-        if (btn && itemObj.originalFilesCount > 1) {
-          btn.style.display = "inline-block";
-          btn.textContent = `ᯤ ${itemObj.originalFilesCount}`;
-        }
-
-        grid.appendChild(itemObj.element);
-      });
-      
-      status.textContent = `Showing ${filteredItems.length} of ${allItems.length} items`;
-    }
-
     async function renderItems(username, items) {
       if (!accountState[username]) return;
       
@@ -882,33 +695,12 @@
       grid.appendChild(fragment);
       
       // Update status
-      status.textContent = `Loaded ${items.length} items • Page ${state.page - 1} of ${Math.ceil(state.total / 9)}`;
+      status.textContent = `Loaded ${items.length} items`;
       
       // Hide load more button if exhausted
       if (state.exhausted) {
-        loadMoreBtn.style.display = "none";
         status.textContent += " • All items loaded";
       }
-      
-      // Apply current filters
-      renderFilteredItems();
-    }
-
-    async function loadMoreItems() {
-      if (!username) return;
-      
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = "Loading...";
-      
-      const items = await fetchItems(username, accountState[username].page);
-      if (items) {
-        await renderItems(username, items);
-      } else if (accountState[username].exhausted) {
-        status.textContent = "No more items to load";
-      }
-      
-      loadMoreBtn.disabled = false;
-      loadMoreBtn.textContent = "Load More";
     }
 
     // Fullscreen item functionality
@@ -941,9 +733,6 @@
       overlay.appendChild(embedContainer);
       document.body.appendChild(overlay);
     }
-
-    // Event listeners
-    loadMoreBtn.addEventListener("click", loadMoreItems);
 
     // Initialize
     (async function init() {
