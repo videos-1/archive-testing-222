@@ -561,6 +561,15 @@
       card.className = "card";
       card.dataset.mediatype = mediatype;
 
+      // Fixed implementation for description display
+      let descriptionHtml = '';
+      if (description && description !== "No description") {
+        descriptionHtml = `
+          <div class="meta"><b>Description:</b></div>
+          <div class="meta description-full">${description}</div>
+        `;
+      }
+
       let metaHtml = `
         <div class="title">${title}</div>
         <div class="preview-container" data-embed="${embedUrl}">
@@ -570,8 +579,7 @@
         <div class="meta"><b>Date:</b> ${date}</div>
         <div class="meta"><b>Tags:</b> ${tags}</div>
         <div class="meta"><b>Media:</b> ${mediatype}</div>
-        <div class="meta"><b>Description:</b></div>
-        <div class="meta description-full">${description}</div>
+        ${descriptionHtml}
       `;
 
       if (metadata.metadata.gmail) metaHtml += `<div class="meta"><b>Gmail:</b> ${metadata.metadata.gmail}</div>`;
@@ -651,6 +659,15 @@
       card.dataset.title = title.toLowerCase();
       card.dataset.tags = tags.toLowerCase();
 
+      // Fixed implementation for description display
+      let descriptionHtml = '';
+      if (description && description !== "No description") {
+        descriptionHtml = `
+          <div class="meta"><b>Description:</b></div>
+          <div class="meta description-full">${description}</div>
+        `;
+      }
+
       let metaHtml = `
         <div class="title">${title}</div>
         <div class="preview-container" data-embed="${embedUrl}">
@@ -660,8 +677,7 @@
         <div class="meta"><b>Date:</b> ${date}</div>
         <div class="meta"><b>Tags:</b> ${tags}</div>
         <div class="meta"><b>Media:</b> ${mediaType}</div>
-        <div class="meta"><b>Description:</b></div>
-        <div class="meta description-full">${description}</div>
+        ${descriptionHtml}
       `;
 
       if (metadata.gmail) metaHtml += `<div class="meta"><b>Gmail:</b> ${metadata.gmail}</div>`;
